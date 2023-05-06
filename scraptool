@@ -1,0 +1,26 @@
+import requests
+from bs4 import BeautifulSoup
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+# define the website URL and headers
+url = 'https://finance.yahoo.com/quote/AAPL'
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+
+# make a GET request to the website and get the HTML content
+response = requests.get(url, headers=headers)
+soup = BeautifulSoup(response.text, 'html.parser')
+
+# find the stock price from the parsed HTML content
+price = soup.find('span', {'class': 'Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)'}).text
+
+# authenticate with Google Sheets API
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
+client = gspread.authorize(creds)
+
+# open the Google Sheets document and select the worksheet
+sheet = client.open('Stock Prices').sheet1
+
+# write the stock price to the worksheet
+sheet.update_cell(2, 2, price)
